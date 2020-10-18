@@ -1,0 +1,6 @@
+/vendor/
+.nvimrc
+.phpcs-cache
+.phpunit.result.cache
+clover.xml
+tags
