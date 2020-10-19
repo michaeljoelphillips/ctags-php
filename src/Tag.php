@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace CTags;
 
-use function array_column;
-use function array_map;
 use function array_slice;
 use function count;
 use function explode;
-use function substr;
 
 class Tag
 {
@@ -38,16 +35,11 @@ class Tag
     /**
      * @param array<int, string> $tag
      */
-    public static function fromLine(string $tagLine): self
+    public static function fromLine(string $tagLine, bool $includeExtensionFields = false): self
     {
         $tagLine                 = explode("\t", $tagLine);
         [$name, $file, $address] = $tagLine;
-
-        $fields = self::parseExtensionTagFields($tagLine);
-
-        if (empty($fields) === false) {
-            $address = substr($address, 0, -2);
-        }
+        $fields                  = $includeExtensionFields ? self::parseExtensionFields($tagLine) : [];
 
         return new self($name, $file, $address, $fields);
     }
@@ -57,21 +49,20 @@ class Tag
      *
      * @return array<string, string>
      */
-    private static function parseExtensionTagFields(array $tagLine): array
+    private static function parseExtensionFields(array $tagLine): array
     {
-        $fields = array_map(
-            static function (string $field): array {
-                $field = explode(':', $field);
+        $extensionFields = [];
 
-                if (count($field) === 1) {
-                    $field = ['kind', $field[0]];
-                }
+        foreach (array_slice($tagLine, 3) as $field) {
+            $field = explode(':', $field);
 
-                return $field;
-            },
-            array_slice($tagLine, 3)
-        );
+            if (count($field) === 1) {
+                $field = ['kind', $field[0]];
+            }
 
-        return array_column($fields, 1, 0);
+            $extensionFields[$field[0]] = $field[1];
+        }
+
+        return $extensionFields;
     }
 }

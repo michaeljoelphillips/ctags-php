@@ -21,21 +21,24 @@ class Reader
     /** @var resource */
     private $tagFile;
 
+    private bool $includeExtensionFields;
+
     /**
      * @param resource $tagFile
      */
-    private function __construct($tagFile)
+    private function __construct($tagFile, bool $includeExtensionFields)
     {
-        $this->tagFile = $tagFile;
+        $this->tagFile                = $tagFile;
+        $this->includeExtensionFields = $includeExtensionFields;
     }
 
-    public static function fromFile(string $file): self
+    public static function fromFile(string $file, bool $includeExtensionFields = false): self
     {
         if (file_exists($file) === false) {
             throw new RuntimeException(sprintf('No such file: %s', $file));
         }
 
-        return new self(fopen($file, 'r'));
+        return new self(fopen($file, 'r'), $includeExtensionFields);
     }
 
     public function listAll(): Generator
@@ -53,7 +56,7 @@ class Reader
                 continue;
             }
 
-            $tagLine = Tag::fromLine(trim($tagLine));
+            $tagLine = Tag::fromLine(trim($tagLine), $this->includeExtensionFields);
 
             if ($predicate($tagLine) === false) {
                 continue;
@@ -61,5 +64,10 @@ class Reader
 
             yield $tagLine;
         }
+    }
+
+    public function match(string $name): Generator
+    {
+        return $this->filter(static fn (Tag $tag) => $tag->name === $name);
     }
 }

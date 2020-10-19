@@ -15,7 +15,21 @@ class ReaderTest extends TestCase
 {
     private const FIXTURE = __DIR__ . '/../fixtures/tags';
 
-    public function testListAll(): void
+    public function testListAllIncludingExtensionFields(): void
+    {
+        $subject = Reader::fromFile(self::FIXTURE, true);
+        $tags    = $subject->listAll();
+        $tags    = iterator_to_array($tags);
+
+        self::assertContainsOnlyInstancesOf(Tag::class, $tags);
+        self::assertEquals('A', $tags[0]->name);
+        self::assertEquals('vendor/phpbench/phpbench/tests/Unit/Benchmark/Remote/reflector/ClassWithClassKeywords.php', $tags[0]->file);
+        self::assertEquals('/^class A$/;"', $tags[0]->address);
+        self::assertCount(2, $tags[0]->fields);
+        self::assertEquals(['kind' => 'c', 'namespace' => 'Test'], $tags[0]->fields);
+    }
+
+    public function testListAllWithoutExtensionFields(): void
     {
         $subject = Reader::fromFile(self::FIXTURE);
         $tags    = $subject->listAll();
@@ -24,14 +38,13 @@ class ReaderTest extends TestCase
         self::assertContainsOnlyInstancesOf(Tag::class, $tags);
         self::assertEquals('A', $tags[0]->name);
         self::assertEquals('vendor/phpbench/phpbench/tests/Unit/Benchmark/Remote/reflector/ClassWithClassKeywords.php', $tags[0]->file);
-        self::assertEquals('/^class A$/', $tags[0]->address);
-        self::assertCount(2, $tags[0]->fields);
-        self::assertEquals(['kind' => 'c', 'namespace' => 'Test'], $tags[0]->fields);
+        self::assertEquals('/^class A$/;"', $tags[0]->address);
+        self::assertCount(0, $tags[0]->fields);
     }
 
     public function testFilterWithPredicateReturnsOnlyMatchingTags(): void
     {
-        $subject = Reader::fromFile(self::FIXTURE);
+        $subject = Reader::fromFile(self::FIXTURE, true);
         $tags    = $subject->filter(static fn (Tag $tag) => $tag->fields['kind'] === 'i');
 
         foreach ($tags as $tag) {
