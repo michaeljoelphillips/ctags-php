@@ -18,7 +18,9 @@
             "email": "michaeljoelphillips@gmail.com"
         }
     ],
-    "require": {},
+    "require": {
+        "nikic/php-parser": "^4.10"
+    },
     "autoload": {
         "psr-4": {
             "CTags\\": "src/"
