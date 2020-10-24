@@ -1,0 +1,13 @@
+#!/usr/bin/env php
+<?php
+
+use Symfony\Component\Console\Application;
+use CTags\Console\GenerateTags;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+$app = new Application();
+$app->add(new GenerateTags());
+$app->setDefaultCommand('tags:generate', true);
+
+$app->run();

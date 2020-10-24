@@ -7,6 +7,7 @@ namespace CTags;
 use function array_slice;
 use function count;
 use function explode;
+use function sprintf;
 
 class Tag
 {
@@ -64,5 +65,10 @@ class Tag
         }
 
         return $extensionFields;
+    }
+
+    public function __toString(): string
+    {
+        return sprintf("%s\t%s\t%s\n", $this->name, $this->file, $this->address);
     }
 }

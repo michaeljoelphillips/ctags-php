@@ -8,6 +8,7 @@ use AppendIterator;
 use FileSystemIterator;
 use FilterIterator;
 use Iterator;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassLike;
 use PhpParser\NodeAbstract;
 use PhpParser\NodeFinder;
@@ -47,7 +48,7 @@ class Parser
             $nodes    = $this->astParser->parse($contents);
 
             $tagNodes = $this->nodeFinder->find($nodes, static function (NodeAbstract $node): bool {
-                return $node instanceof ClassLike;
+                return $node instanceof Class_ && $node->isAnonymous() === false;
             });
 
             $this->writeTags($tagNodes, $file->getPathName());

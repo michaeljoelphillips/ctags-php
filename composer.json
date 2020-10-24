@@ -19,7 +19,8 @@
         }
     ],
     "require": {
-        "nikic/php-parser": "^4.10"
+        "nikic/php-parser": "^4.10",
+        "symfony/console": "^5.1"
     },
     "autoload": {
         "psr-4": {
