@@ -40,24 +40,48 @@ class ReaderBench
     /**
      * @Revs(10)
      * @Iterations(10)
-     * @Assert(60000)
-     */
-    public function benchMatchWithoutExtensionFields(): void
-    {
-        $subject = Reader::fromFile(self::FIXTURE, false);
-
-        iterator_to_array($subject->match('Server'));
-    }
-
-    /**
-     * @Revs(10)
-     * @Iterations(10)
-     * @Assert(105000)
+     * @Assert(15000)
      */
     public function benchMatchWithExtensionFields(): void
     {
         $subject = Reader::fromFile(self::FIXTURE, true);
 
-        iterator_to_array($subject->match('Server'));
+        iterator_to_array($subject->match('AbstractString'));
+    }
+
+    /**
+     * @Revs(10)
+     * @Iterations(10)
+     * @Assert(15000)
+     */
+    public function benchMatchWithoutExtensionFields(): void
+    {
+        $subject = Reader::fromFile(self::FIXTURE, false);
+
+        iterator_to_array($subject->match('AbstractString'));
+    }
+
+    /**
+     * @Revs(10)
+     * @Iterations(10)
+     * @Assert(15000)
+     */
+    public function benchMatchPartialWithExtensionFields(): void
+    {
+        $subject = Reader::fromFile(self::FIXTURE, true);
+
+        iterator_to_array($subject->match('Abstract'));
+    }
+
+    /**
+     * @Revs(10)
+     * @Iterations(10)
+     * @Assert(15000)
+     */
+    public function benchMatchPartialWithoutExtensionFields(): void
+    {
+        $subject = Reader::fromFile(self::FIXTURE, false);
+
+        iterator_to_array($subject->match('Abstract'));
     }
 }

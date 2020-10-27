@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace CTags;
 
+use InvalidArgumentException;
+
 use function array_slice;
 use function count;
 use function explode;
+use function implode;
+use function sprintf;
 
 class Tag
 {
@@ -37,9 +41,14 @@ class Tag
      */
     public static function fromLine(string $tagLine, bool $includeExtensionFields = false): self
     {
-        $tagLine                 = explode("\t", $tagLine);
-        [$name, $file, $address] = $tagLine;
-        $fields                  = $includeExtensionFields ? self::parseExtensionFields($tagLine) : [];
+        $tagLineParts = explode("\t", $tagLine);
+
+        if (count($tagLineParts) < 3) {
+            throw new InvalidArgumentException(sprintf('Invalid tag given: %s', $tagLine));
+        }
+
+        [$name, $file, $address] = $tagLineParts;
+        $fields                  = $includeExtensionFields === true ? self::parseExtensionFields($tagLineParts) : [];
 
         return new self($name, $file, $address, $fields);
     }
@@ -64,5 +73,24 @@ class Tag
         }
 
         return $extensionFields;
+    }
+
+    public function isExtended(): bool
+    {
+        return empty($this->fields) === false;
+    }
+
+    public function __toString(): string
+    {
+        if ($this->isExtended() === false) {
+            return sprintf("%s\t%s\t%s", $this->name, $this->file, $this->address);
+        }
+
+        $fields = [];
+        foreach ($this->fields as $key => $value) {
+            $fields[] = sprintf('%s:%s', $key, $value);
+        }
+
+        return sprintf("%s\t%s\t%s\t%s", $this->name, $this->file, $this->address, implode("\t", $fields));
     }
 }

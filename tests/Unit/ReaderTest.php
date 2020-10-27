@@ -15,12 +15,13 @@ class ReaderTest extends TestCase
 {
     private const FIXTURE = __DIR__ . '/../fixtures/tags';
 
-    public function testListAllIncludingExtensionFields(): void
+    public function testListAll(): void
     {
         $subject = Reader::fromFile(self::FIXTURE, true);
         $tags    = $subject->listAll();
         $tags    = iterator_to_array($tags);
 
+        self::assertCount(14768, $tags);
         self::assertContainsOnlyInstancesOf(Tag::class, $tags);
         self::assertEquals('A', $tags[0]->name);
         self::assertEquals('vendor/phpbench/phpbench/tests/Unit/Benchmark/Remote/reflector/ClassWithClassKeywords.php', $tags[0]->file);
@@ -29,20 +30,7 @@ class ReaderTest extends TestCase
         self::assertEquals(['kind' => 'c', 'namespace' => 'Test'], $tags[0]->fields);
     }
 
-    public function testListAllWithoutExtensionFields(): void
-    {
-        $subject = Reader::fromFile(self::FIXTURE);
-        $tags    = $subject->listAll();
-        $tags    = iterator_to_array($tags);
-
-        self::assertContainsOnlyInstancesOf(Tag::class, $tags);
-        self::assertEquals('A', $tags[0]->name);
-        self::assertEquals('vendor/phpbench/phpbench/tests/Unit/Benchmark/Remote/reflector/ClassWithClassKeywords.php', $tags[0]->file);
-        self::assertEquals('/^class A$/;"', $tags[0]->address);
-        self::assertCount(0, $tags[0]->fields);
-    }
-
-    public function testFilterWithPredicateReturnsOnlyMatchingTags(): void
+    public function testFilter(): void
     {
         $subject = Reader::fromFile(self::FIXTURE, true);
         $tags    = $subject->filter(static fn (Tag $tag) => $tag->fields['kind'] === 'i');
@@ -56,6 +44,35 @@ class ReaderTest extends TestCase
         }
 
         self::addToAssertionCount(1);
+    }
+
+    public function testMatch(): void
+    {
+        $subject = Reader::fromFile(self::FIXTURE, true);
+        $tags    = $subject->match('AbstractString');
+        $tags    = iterator_to_array($tags);
+
+        self::assertCount(1, $tags);
+        self::assertContainsOnlyInstancesOf(Tag::class, $tags);
+    }
+
+    public function testPartialMatch(): void
+    {
+        $subject = Reader::fromFile(self::FIXTURE, true);
+        $tags    = $subject->partialMatch('Abstract');
+        $tags    = iterator_to_array($tags);
+
+        self::assertCount(33, $tags);
+        self::assertContainsOnlyInstancesOf(Tag::class, $tags);
+    }
+
+    public function testMultipleCallsToMatchReturnTheSameResult(): void
+    {
+        $subject      = Reader::fromFile(self::FIXTURE, true);
+        $firstResult  = iterator_to_array($subject->match('AbstractString'));
+        $secondResult = iterator_to_array($subject->match('AbstractString'));
+
+        self::assertEquals($firstResult, $secondResult);
     }
 
     public function testReaderThrowsExceptionWhenTagsFileDoesNotExist(): void
