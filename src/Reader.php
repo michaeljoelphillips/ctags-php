@@ -10,14 +10,14 @@ use RuntimeException;
 use function fgets;
 use function file_exists;
 use function fopen;
+use function fseek;
+use function ftell;
+use function preg_match;
 use function sprintf;
-use function strpos;
 use function trim;
 
 class Reader
 {
-    private const TAGFILE_METADATA_PREFIX = '!_TAG_';
-
     /** @var resource */
     private $tagFile;
 
@@ -30,6 +30,29 @@ class Reader
     {
         $this->tagFile                = $tagFile;
         $this->includeExtensionFields = $includeExtensionFields;
+    }
+
+    private function resetFilePointer(): void
+    {
+        static $lastPosition = null;
+
+        if ($lastPosition !== null) {
+            fseek($this->tagFile, $lastPosition);
+
+            return;
+        }
+
+        fseek($this->tagFile, 0);
+
+        while ($tagLine = fgets($this->tagFile)) {
+            if ($tagLine[0] !== '!') {
+                fseek($this->tagFile, $lastPosition);
+
+                break;
+            }
+
+            $lastPosition = ftell($this->tagFile);
+        }
     }
 
     public static function fromFile(string $file, bool $includeExtensionFields = false): self
@@ -51,11 +74,9 @@ class Reader
      */
     public function filter(callable $predicate): Generator
     {
-        while ($tagLine = fgets($this->tagFile)) {
-            if (strpos($tagLine, self::TAGFILE_METADATA_PREFIX) !== false) {
-                continue;
-            }
+        $this->resetFilePointer();
 
+        while ($tagLine = fgets($this->tagFile)) {
             $tagLine = Tag::fromLine(trim($tagLine), $this->includeExtensionFields);
 
             if ($predicate($tagLine) === false) {
@@ -66,8 +87,29 @@ class Reader
         }
     }
 
+    public function partialMatch(string $name): Generator
+    {
+        $this->resetFilePointer();
+
+        while ($tagLine = fgets($this->tagFile)) {
+            if (preg_match('/^' . $name . '\w*\t/', $tagLine) !== 1) {
+                continue;
+            }
+
+            yield Tag::fromLine(trim($tagLine), $this->includeExtensionFields);
+        }
+    }
+
     public function match(string $name): Generator
     {
-        return $this->filter(static fn (Tag $tag) => $tag->name === $name);
+        $this->resetFilePointer();
+
+        while ($tagLine = fgets($this->tagFile)) {
+            if (preg_match('/^' . $name . '\t/', $tagLine) !== 1) {
+                continue;
+            }
+
+            yield Tag::fromLine(trim($tagLine), $this->includeExtensionFields);
+        }
     }
 }
