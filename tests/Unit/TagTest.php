@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace CTags\Tests\Unit;
+namespace CTags\Tests;
 
 use CTags\Tag;
 use InvalidArgumentException;
@@ -10,45 +10,66 @@ use PHPUnit\Framework\TestCase;
 
 class TagTest extends TestCase
 {
-    public function testFromLineGuardsAgainstInvalidTagLines(): void
+    private const TAG_WITH_EXTENSION_FIELDS    = 'name	file	/^address$/;"	kind:c	namespace:Foo\Bar';
+    private const TAG_WITHOUT_EXTENSION_FIELDS = 'name	file	/^address$/';
+
+    /**
+     * @dataProvider invalidTags
+     */
+    public function testFromLineWithInvalidTag(string $invalidTag): void
     {
         $this->expectException(InvalidArgumentException::class);
 
-        Tag::fromLine('InvalidTag	src/InvalidTag.php');
+        Tag::fromLine($invalidTag);
     }
 
-    public function testIsExtendedWhenExtendedFieldsArePresent(): void
+    public function testFromLineWithTagNotContainingExtensionFields(): void
     {
-        $subject = new Tag('TestTag', 'src/TestTag.php', '/^class TestTag$/;"', ['kind' => 'class', 'namespace' => 'App']);
+        $subject = Tag::fromLine(self::TAG_WITHOUT_EXTENSION_FIELDS);
 
-        self::assertTrue($subject->isExtended());
+        self::assertEquals($subject->name, 'name');
+        self::assertEquals($subject->file, 'file');
+        self::assertEquals($subject->address, '/^address$/');
+        self::assertEmpty($subject->fields);
     }
 
-    public function testIsExtendedWhenExtendedFieldsAreNotPresent(): void
+    public function testFromLineWithTagContainingExtensionFields(): void
     {
-        $subject = new Tag('TestTag', 'src/TestTag.php', '/^class TestTag$/;"', []);
+        $subject = Tag::fromLine(self::TAG_WITH_EXTENSION_FIELDS, true);
 
-        self::assertFalse($subject->isExtended());
+        self::assertEquals($subject->name, 'name');
+        self::assertEquals($subject->file, 'file');
+        self::assertEquals($subject->address, '/^address$/;"');
+        self::assertNotEmpty($subject->fields);
+        self::assertEquals('c', $subject->fields['kind']);
+        self::assertEquals('Foo\Bar', $subject->fields['namespace']);
     }
 
-    /**
-     * @dataProvider tagLineProvider
-     */
-    public function testToStringMatchesOriginalTagLine(bool $includeExtensionFields, string $tagline): void
+    public function testFromLineWithTagContainingExtensionFieldsButExtensionFieldsHasBeenOverridden(): void
     {
-        $subject = Tag::fromLine($tagline, $includeExtensionFields);
+        $subject = Tag::fromLine(self::TAG_WITH_EXTENSION_FIELDS, false);
 
-        self::assertEquals($tagline, (string) $subject);
+        self::assertEquals($subject->name, 'name');
+        self::assertEquals($subject->file, 'file');
+        self::assertEquals($subject->address, '/^address$/;"');
+        self::assertEmpty($subject->fields);
+    }
+
+    public function testToString(): void
+    {
+        self::assertEquals(self::TAG_WITHOUT_EXTENSION_FIELDS, (string) Tag::fromLine(self::TAG_WITHOUT_EXTENSION_FIELDS));
+        self::assertEquals(self::TAG_WITH_EXTENSION_FIELDS, (string) Tag::fromLine(self::TAG_WITH_EXTENSION_FIELDS, true));
     }
 
     /**
      * @return array<int, array<int, string>>
      */
-    public function tagLineProvider(): array
+    public function invalidTags(): array
     {
         return [
-            [false, 'Reader	src/Reader.php	/^class Reader$/'],
-            [true, 'Reader	src/Reader.php	/^class Reader$/;"	kind:c	namespace:CTags'],
+            [''],
+            ['name'],
+            ['name	file'],
         ];
     }
 }
