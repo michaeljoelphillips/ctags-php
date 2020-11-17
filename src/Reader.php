@@ -64,6 +64,9 @@ class Reader
         return new self(fopen($file, 'r'), $includeExtensionFields);
     }
 
+    /**
+     * @return Generator<Tag>
+     */
     public function listAll(): Generator
     {
         return $this->filter(static fn () => true);
@@ -71,6 +74,8 @@ class Reader
 
     /**
      * @param callable(Tag $tag): bool $predicate
+     *
+     * @return Generator<Tag>
      */
     public function filter(callable $predicate): Generator
     {
@@ -87,6 +92,9 @@ class Reader
         }
     }
 
+    /**
+     * @return Generator<Tag>
+     */
     public function partialMatch(string $name): Generator
     {
         $this->resetFilePointer();
@@ -100,6 +108,9 @@ class Reader
         }
     }
 
+    /**
+     * @return Generator<Tag>
+     */
     public function match(string $name): Generator
     {
         $this->resetFilePointer();

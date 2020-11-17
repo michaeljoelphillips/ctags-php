@@ -36,9 +36,6 @@ class Tag
         $this->fields  = $fields;
     }
 
-    /**
-     * @param array<int, string> $tag
-     */
     public static function fromLine(string $tagLine, bool $includeExtensionFields = false): self
     {
         $tagLineParts = explode("\t", $tagLine);
